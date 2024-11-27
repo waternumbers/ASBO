@@ -1,0 +1,328 @@
+---
+title: "Regression Cost Calculations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Regression Cost Calculations}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+                    collapse = TRUE,
+                    comment = "#>"
+                  )
+```
+
+The purpose of this vignette is to present the calculations for a peicewise linear regression where for each time step there are multiple independent observations.
+
+In the follow variables identified by Greek letters are considered unknown.
+
+# Linear regression
+
+At time step $t$ the vector of iid observations $\mathbf{y}_{t}=\left\{y_{t,1},\ldots,y_{t,p}\right\}$ is explained by the design matrix $\mathbf{X}_{t}$ and modelled as a multivariate Gaussian distribution. Consider known, ''background'', parameters $\mathbf{m}_{t}$ and precision matrix $\mathbf{S}_{t} = \mathbf{U}^{\prime}\mathbf{U}$ deviation from which are modelled by $\theta$ and $\Lambda$ through the likelihood
+
+\[
+L\left(\mathbf{y}_{t} \left| \theta,\lambda\right.\right) = 
+\left(2\pi\right)^{-p/2} 
+\det\left(\mathbf{S}_{t}\right)^{1/2}
+\det\left(\Lambda\right)^{1/2}
+\exp\left(-\frac{1}{2}\left( \mathbf{y}_{t} - \mathbf{X}_{t} \mathbf{m}_{t} - \mathbf{X}_{t} \theta\right)^{\prime} \mathbf{U}^{\prime} \Lambda \mathbf{U} \left( \mathbf{y}_{t}  - \mathbf{X}_{t} \mathbf{m}_{t} - \mathbf{X}_{t} \theta\right) \right)
+\]
+
+Pre whitening the known values such that $\hat{\mathbf{y}}_{t} = \mathbf{U}_{t} \left(\mathbf{y}_{t} - \mathbf{X}_{t} \mathbf{m}_{t}\right)$  and  $\hat{\mathbf{X}}_{t} = \mathbf{U}_{t} \mathbf{X}_{t}$ gives
+
+\[
+L\left(\mathbf{y}_{t} \left| \theta,\Lambda\right.\right) = 
+\left(2\pi\right)^{-p/2} 
+\det\left(\mathbf{S}_{t}\right)^{1/2}
+\det\left(\Lambda\right)^{1/2}
+\exp\left(-\frac{1}{2}\left( \hat{\mathbf{y}}_{t} - \hat{\mathbf{X}}_{t} \theta\right)^{\prime} \Lambda \left( \hat{\mathbf{y}}_{t}  - \hat{\mathbf{X}}_{t} \theta\right) \right)
+\]
+
+Grouping the known values into $K_{t} = p\log\left(2\pi\right) - \log\left(\det{\mathbf{S}_{t}}\right)$ the log likelihood is
+\[
+l\left(\mathbf{y}_{t} \left| \theta,\Lambda \right.\right) = 
+-\frac{1}{2}K_{t} 
++ \frac{1}{2}\log\left( \det\left(\Lambda\right)\right)
+-\frac{1}{2}\left( \hat{\mathbf{y}}_{t} - \hat{\mathbf{X}}_{t} \theta\right)^{\prime} \Lambda \left( \hat{\mathbf{y}}_{t}  - \hat{\mathbf{X}}_{t} \theta\right)
+\]
+
+Suppose an anomaly with common parameters occurs of $n_{k}$ consecuative time steps in the set $T_{k}$. The log-likelihood of $\mathbf{y}_{t \in T_{k}}$ is 
+\[
+l\left(\mathbf{y}_{t \in T_{k}} \left| \theta_{k},\Lambda_{k} \right.\right) = 
+-\frac{1}{2}\sum_{t \in T_{k}}K_{t} 
++ \frac{n_{k}}{2}\log\left( \det\left(\Lambda\right)\right)
+-\frac{1}{2}\sum_{t \in T_{k}}\left( \hat{\mathbf{y}}_{t} - \hat{\mathbf{X}}_{t} \theta_{k}\right)^{\prime} \Lambda_{k} \left( \hat{\mathbf{y}}_{t}  - \hat{\mathbf{X}}_{t} \theta_{k}\right)
+\]
+
+with the cost being twice the negative log likelihood plus a penalty $\beta$ giving 
+
+\[
+C\left(\mathbf{y}_{t \in T_{k}} \left| \theta_{k}, \Lambda_{k} \right.\right) = 
+\sum_{t \in T_{k}}K_{t} 
+- n_{k}\log\left( \det\left(\Lambda\right)\right)
++\sum_{t \in T_{k}}\left( \hat{\mathbf{y}}_{t} - \hat{\mathbf{X}}_{t} \theta_{k}\right)^{\prime} \Lambda_{k} \left( \hat{\mathbf{y}}_{t}  - \hat{\mathbf{X}}_{t} \theta_{k}\right)
++ \beta
+\]
+
+
+### Sufficent statistics
+
+Computation is greatly aided by being able to keep adequate sufficent statistics. 
+Expanding the summation in the cost gives
+\[
+\sum_{t \in T_{k}}\left( \hat{\mathbf{y}}_{t} - \hat{\mathbf{X}}_{t} \theta_{k}\right)^{\prime} \Lambda_{k} \left( \hat{\mathbf{y}}_{t}  - \hat{\mathbf{X}}_{t} \theta_{k}\right) = 
+\sum_{t \in T_{k}} \left( \hat{\mathbf{y}}^{\prime}_{t} \Lambda \hat{\mathbf{y}}_{t} +
+\theta^{\prime}_{k}\hat{\mathbf{X}}^{\prime}_{t} \Lambda \hat{\mathbf{X}}_{t} \theta_{k} -
+2 \theta^{\prime}_{k} \hat{\mathbf{X}}^{\prime}_{t}\Lambda \hat{\mathbf{y}}_{t} \right)
+\]
+\[
+\sum_{t \in T_{k}} \left( \mathrm{tr}\left( \hat{\mathbf{y}}_{t}\hat{\mathbf{y}}^{\prime}_{t} \Lambda \right) +
+\theta^{\prime}_{k}\hat{\mathbf{X}}^{\prime}_{t} \Lambda \hat{\mathbf{X}}_{t} \theta_{k} -
+2 \theta^{\prime}_{k} \hat{\mathbf{X}}^{\prime}_{t}\Lambda \hat{\mathbf{y}}_{t} \right)
+\]
+
+## Baseline: No Anomaly
+
+Here $\theta_{k}=\mathbf{0}$, $\Lambda_{k}$ is an identify matrix and there is no penalty so $\beta = 0$. The resulting csot is 
+\[
+C_{B}\left(\mathbf{y}_{t \in T_{k}} \left| \theta_{k}, \Lambda_{k} \right.\right) = 
+\sum_{t \in T_{k}} K_{t} 
++ \sum_{t \in T_{k}} \hat{\mathbf{y}}_{t}^{\prime} \hat{\mathbf{y}}_{t}
+\]
+
+
+## Collective Anomalies
+
+
+### Anomaly in Regression parameters
+
+There is no change in variance so $\Lambda_{k}$ is an identify matrix. 
+The estimate $\hat{\theta}_{k}$ of $\theta_{k}$ can be selected to minimise the cost by taking
+
+\[
+\hat{\theta}_{k} = \left( \sum\limits_{t \in T_k} \hat{\mathbf{X}}_{t}^{\prime}  \hat{\mathbf{X}}_{t} \right)^{-1} \left(  \sum\limits_{t \in T_k} \hat{\mathbf{X}}_{t}^{\prime}  \hat{\mathbf{y}}_{t} \right)
+\]
+
+
+\[
+C_{C}\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}} K_{t} 
++ \left( \sum_{t \in T_{k}} \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)
+- \left(  \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)^{\prime} \left( \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\mathbf{X}_{t} \right)^{-1} \left(  \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)
++\beta
+\]
+
+
+### Anomaly in Variance
+
+These is no mean anomaly in the regression parameters so $\theta_{k}=0$. The estimate of $\sigma_{k}$ therfore changes to
+
+\[
+\hat{\sigma}_{k} = \frac{1}{n_{k}} \sum\limits_{t \in T_{k}} \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t}
+\]
+
+while the cost is
+\[
+C_{C}\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}} K_{t} 
++n_{k} \log\left(\hat{\sigma}_{k}\right)
++n_{k}
++\beta
+\]
+
+
+### Anomaly in regression parameters and variance
+Since
+\[
+\sum_{t \in T_{k}} \left( \hat{\mathbf{y}}_{t} - \mathbf{X}_{t} \theta_{k}\right)^{\prime} \mathbf{S}_{t}^{-1} \left( \hat{\mathbf{y}}_{t} - \mathbf{X}_{t} \theta_{k}\right)
+=
+\sum_{t \in T_{k}} \left( \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t}
+- 2 \theta_{k}^{\prime}\mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1} \hat{\mathbf{y}}_{t}
++ \theta_{k}^{\prime}\mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\mathbf{X}_{t}  \theta_{k}
+\right)
+\]
+
+The estimate $\hat{\theta}_{k}$ of $\theta_{k}$ can be selected to minimise the cost by taking
+\[
+\hat{\theta}_{k} = \left( \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\mathbf{X}_{t} \right)^{-1} \left(  \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)
+\]
+
+Subsitution of this result into the cost gives
+\[
+\hat{\sigma}_{k} = \frac{1}{n_{k}} \sum_{t \in T_{k}} \left( \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t}
+- 2 \hat{\theta}_{k}^{\prime}\mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1} \hat{\mathbf{y}}_{t}
++ \hat{\theta}_{k}^{\prime}\mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\mathbf{X}_{t}  \hat{\theta}_{k}
+\right)
+\]
+which simplifies to
+\[
+\hat{\sigma}_{k} = \frac{1}{n_{k}} \left[
+\left( \sum_{t \in T_{k}} \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)
+- \left(  \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)^{\prime} \left( \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\mathbf{X}_{t} \right)^{-1} \left(  \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)
+\right]
+\]
+
+The cost is given by
+\[
+C_{C}\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}} K_{t} 
++n_{k} \log\left(\hat{\sigma}_{k}\right)
++n_{k}
++\beta
+\]
+
+
+
+### Anomaly in Regression parameters
+
+There is no change in variance so $\sigma_{k}=1$. The estimate of $\hat{\theta}_{k}$ is unchanged which gives a cost of
+
+\[
+C_{C}\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}} K_{t} 
++ \left( \sum_{t \in T_{k}} \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)
+- \left(  \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)^{\prime} \left( \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\mathbf{X}_{t} \right)^{-1} \left(  \sum\limits_{t \in T_k} \mathbf{X}_{t}^{\prime}  \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t} \right)
++\beta
+\]
+
+
+### Anomaly in Variance
+
+These is no mean anomaly in the regression parameters so $\theta_{k}=0$. The estimate of $\sigma_{k}$ therfore changes to
+
+\[
+\hat{\sigma}_{k} = \frac{1}{n_{k}} \sum\limits_{t \in T_{k}} \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t}
+\]
+
+while the cost is
+\[
+C_{C}\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}} K_{t} 
++n_{k} \log\left(\hat{\sigma}_{k}\right)
++n_{k}
++\beta
+\]
+
+
+## Point anomaly
+
+A point anomaly occurs at a single time instance and is represented as a variance anomaly. 
+Naively the cost could be computed using the formulea for a variance anomaly as
+\[
+C_{p}\left(\mathbf{y}_{t}\left| \sigma_{t}\right.\right) = 
+K_{t}
++ n_{t} \log\left( \hat{\sigma}_{t} \right) + n_{t} + \beta
+\]
+with
+\[
+\hat{\sigma}_{t} = \frac{1}{n_{t}} \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t}
+\]
+
+Relating this to the background cost we see that point anomalies may be accepted in the capa search when
+\[
+f\left(\hat{\sigma}_{t},\gamma,\beta\right) = C_{p}\left(y_{t}\left| \mu_{t},\sigma_{t}\right.\right) - C_{B}\left(y_{t}\left| \mu_{t},\sigma_{t}\right.\right) = n_{t} \log \left( \hat{\sigma}_{t} \right) + n_{t} + \beta - n_{t} \hat{\sigma}_{t} < 0
+\]
+
+The following plot shows $\log \left( \hat{\sigma}_{t} \right) + 1 - \hat{\sigma}_{t}$ which indicates that point anomalies may be declared for both outlying and inlying data.
+
+```{r echo=FALSE, figA, fig.width=7, fig.height=7}
+sigma <- seq(1e-6,4,length=1000)
+yy <- log(sigma) + 1 - sigma
+
+plot(sigma,yy,type="l",xlab="sigma",ylab="log(sigma) + 1 - sigma")
+```
+
+In the case of $n_{t}=1$ Fisch et al. control this by modifying the cost of a point anomaly so it is expressed as
+\[
+C_{p}\left(y_{t}\left| \sigma_{t}, \mathbf{X}_{t}\right.\right) = 
+\log\left(\exp\left(-\beta\right) + \hat{\sigma}_{t} \right) + K_{t} + 1 + \beta
+\]
+
+This has the effect of allowing only outlier anomalies, something that can be much more easily acheived by taking
+
+\[
+\hat{\sigma}_{t} = \max\left(1,\frac{1}{n_{t}} \hat{\mathbf{y}}_{t}^{\prime} \mathbf{S}_{t}^{-1}\hat{\mathbf{y}}_{t}\right)
+\]
+
+giving the cost as
+
+\[
+C\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}} K_{t} 
++n_{k} \log\left(\hat{\sigma}_{k}\right)
++\frac{1}{\hat{\sigma}_{k}}\sum_{t \in T_{k}} \left( \hat{\mathbf{y}}_{t} \mathbf{S}_{t}^{-1} \hat{\mathbf{y}}_{t} \right) +\beta
+\]
+
+
+<!-- ```{r echo=FALSE, figA, fig.width=7, fig.height=7} -->
+<!-- sigma <- seq(1e-6,4,length=1000) -->
+<!-- beta <- seq(0,10,length=5) -->
+<!-- yy <- matrix(NA,length(sigma),length(beta)) -->
+<!-- for(ii in 1:length(beta)){ -->
+<!--     yy[,ii] <- log(exp(-beta[ii]) + sigma) + 1 + beta[ii] - sigma -->
+<!-- } -->
+<!-- matplot(sigma,yy,type="l",xlab="sigma",ylab="log(sigma) + 1 - sigma") -->
+<!-- ``` -->
+
+
+
+
+
+<!-- Relating this to the background cost we see that point anomalies may be accepted in the capa search when -->
+<!-- \[ -->
+<!-- f\left(\hat{\sigma}_{t},\gamma,\beta\right) = C_{p}\left(y_{t}\left| \mu_{t},\sigma_{t}\right.\right) - C_{B}\left(y_{t}\left| \mu_{t},\sigma_{t}\right.\right) = n_{t} \log \left( \gamma + \hat{\sigma_{t}} \right) + n_{t} + \beta - n_{t} \hat{\sigma}_{t} < 0 -->
+<!-- \] -->
+
+<!-- This implies that $\gamma$ should be selected such that $f\left(0,\gamma,\beta\right) \geq 0$  -->
+
+<!-- The gradient wrt $z_{t}^2$ is -->
+<!-- \[ -->
+<!-- \frac{\partial}{\partial z_{t}^2} f\left(z_{t}^2,\gamma,\beta\right) -->
+<!-- = \frac{1}{\gamma + z_{t}^{2}} - 1 -->
+<!-- \] -->
+
+<!-- Requiring $\gamma < 1$; which maintains a positive gradient for small z_{t}^2; indicates that there will no anomalies near 0. -->
+
+<!-- Consider three different definitions of $\gamma$. -->
+
+<!-- - The non corection of $\gamma_{0} = 0$ which allows point anomalies as z_{t}^2 approaches 0 -->
+<!-- - The correction $\gamma_{1} = \exp\left(-\beta\right)$ proposed by Fisch et al. -->
+<!-- - The minimal correction $\gamma_{2} = \exp\left(-\left(1+\beta\right)\right)$ for which $f\left(0,\gamma_{2},\beta\right) = 0$. -->
+
+<!-- To see the impact of the correct for small $z$ the following figure shows  -->
+<!-- $f\left(\sigma_{t},\gamma,\beta\right)$ for $\frac{\beta}{n}=10$ for the three options. -->
+
+<!-- ```{r echo=FALSE, f, fig.width=7, fig.height=7} -->
+<!-- fz <- function(zsq,gamma,beta){ log(gamma+zsq) + 1 + beta - zsq } -->
+<!-- zsq <- seq(0,1e-3,length=10000) -->
+<!-- Y <- matrix(NA,length(zsq),3) -->
+<!-- colnames(Y) <- c("gamma_0","gamma_1","gamma_2") -->
+<!-- b <- 10 -->
+<!-- Y[,1] <- fz(zsq,0,b) -->
+<!-- Y[,2] <- fz(zsq,exp(-b),10) -->
+<!-- Y[,3] <- fz(zsq,exp(-(1+b)),10) -->
+
+
+<!-- matplot(sqrt(zsq),Y,type="l",xlab="sigma",ylab="f(sigma,gamma,10n)"); -->
+<!-- legend("bottomright",colnames(Y),col=1:3,lty=1:3) -->
+<!-- ``` -->
+
+<!-- It is clear that the difference become small as $\beta$ increases. This is supported by the plot below shows the value of $sigma_{t}$ at which an point anomaly might occur as $\frac{\beta}{n}$ varies. Area above the line are potential anomaly values. -->
+
+<!-- ```{r echo=FALSE, when_anaom, fig.width=7, fig.height=7} -->
+<!-- betaRng <- seq(log(1.01),2*log(100),length=1000) ###2*log(1:1000) -->
+<!-- Y <- matrix(NA,length(betaRng),3) -->
+<!-- colnames(Y) <- c("gamma_0","gamma_1","gamma_2") -->
+
+<!-- for(ii in 1:length(betaRng)){ -->
+<!--     rng <- c(1,25) -->
+<!--     b <- betaRng[ii] -->
+<!--     Y[ii,1] <- uniroot(fz,rng,gamma=0,beta=b)$root -->
+<!--     Y[ii,2] <- uniroot(fz,rng,gamma=exp(-b),beta=b)$root -->
+<!--     Y[ii,3] <- uniroot(fz,rng,gamma=exp(-(1+b)),beta=b)$root -->
+<!-- } -->
+<!-- matplot(betaRng,sqrt(Y),type="l",xlab="beta/n",ylab="sigma"); -->
+<!-- legend("bottomright",colnames(Y),col=1:3,lty=1:3) -->
+<!-- ``` -->

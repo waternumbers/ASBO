@@ -1,0 +1,97 @@
+---
+title: "Univariate Poisson Cost Calculations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Univariate Poisson Cost Calculations}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+                    collapse = TRUE,
+                    comment = "#>"
+                  )
+```
+
+The purpose of this vignette is to present the calculations of the costs for the univariate Poisson distribution.
+
+Each time step $t$ belongs to group $k$ whose time stamps are the set $T_{k}$. A group can have a multiplicative rate anomaly $\lambda_{k}$ which is common for $t \in T_{k}$. Assuming the {\it a priori} known rate $r_{t}$ the data generating distribution gives for $t \in T_{k}$
+
+\[
+P\left(y_t \left| r_t, \lambda_k\right.\right) = 
+\frac{\lambda_{k}^{y_{t}} r_{t}^{y_{t}} \exp\left(-r_{t}\lambda_{k}\right)}{y_{t}!}
+\]
+
+
+The cost is computed as twice the negative log likelhiood plus a penalty term $\beta$ giving
+
+\[
+C\left(y_{t \in T_{k}} \left| \lambda_k,r_{t \in T_{k}}\right.\right) = 
+2 \lambda_{k} \sum\limits_{t \in T_{k}} r_{t}
+- 2 \log\left(\lambda_{k}\right) \sum\limits_{t \in T_{k}} y_{t} 
+- 2 \sum\limits_{t \in T_{k}} y_{t} \log\left(r_{t}\right)
++ 2 \sum\limits_{t \in T_{k}} \log\left( y_{t}! \right)
++ \beta
+\]
+
+
+### No Anomaly (Baseline)
+
+In this case $\lambda_{k}=1$ and there is no penalty so
+
+\[
+C_{B}\left(y_{t \in T_{k}} \left| r_{t \in T_{k}}\right.\right) = 
+2 \sum\limits_{t \in T_{k}} r_{t}
+- 2 \sum\limits_{t \in T_{k}} y_{t} \log\left(r_{t}\right)
++ 2 \sum\limits_{t \in T_{k}} \log\left( y_{t}! \right)
+\]
+
+### Anomaly in Rate
+
+An estimate $\hat{\lambda}_{k}$ of $\lambda_{k}$ can be selected to minimise the cost by taking
+\[
+\hat{\lambda}_{k} = \frac{ \sum\limits_{t \in T_{k}} y_{t} }{\sum\limits_{t \in T_{k}} r_{t}}
+\]
+
+\[
+C_{A}\left(y_{t \in T_{k}} \left| \hat{\lambda}_k,r_{t \in T_{k}}\right.\right) = 
+2 \sum\limits_{t \in T_{k}} y_{t}
+- 2 \log\left(\hat{\lambda}_{k}\right) \sum\limits_{t \in T_{k}} y_{t} 
+- 2 \sum\limits_{t \in T_{k}} y_{t} \log\left(r_{t}\right)
++ 2 \sum\limits_{t \in T_{k}} \log\left( y_{t}! \right)
++ \beta
+\]
+
+An anomaly will be accepted whenever
+
+\[
+C_{A}\left(y_{t \in T_{k}} \left| \hat{\lambda}_k,r_{t \in T_{k}}\right.\right) - 
+C_{B}\left(y_{t \in T_{k}} \left| r_{t \in T_{k}}\right.\right) = 
+2 \sum\limits_{t \in T_{k}} y_{t}
+- 2 \log\left(\hat{\lambda}_{k}\right) \sum\limits_{t \in T_{k}} y_{t} 
++ \beta
+- 2 \sum\limits_{t \in T_{k}} r_{t}
+<0
+\]
+
+Rearranging this expression in terms of $\sum\limits_{t \in T_{k}} r_{t}$, the expected number of counts if the period was not anomalous gives
+
+\[
+C_{A}\left(y_{t \in T_{k}} \left| \hat{\lambda}_k,r_{t \in T_{k}}\right.\right) - 
+C_{B}\left(y_{t \in T_{k}} \left| r_{t \in T_{k}}\right.\right) = 
+\beta -
+2 \left( 1 - \hat{\lambda}_{k} + \hat{\lambda}_{k}\log\left(\hat{\lambda}_{k}\right)\right)
+\sum\limits_{t \in T_{k}} r_{t}
+\]
+
+This form suggests the selection of $\beta$ based on a minimum change in $\hat{\lambda}_{k}$ away from 1 causing at least a certain change from the expected number of counts.
+The figure below show $\gamma = 2 \left( 1 - \hat{\lambda}_{k} + \hat{\lambda}_{k}\log\left(\hat{\lambda}_{k}\right)\right)$. Using this we could select $gamma=0.01$ to ensure a change in in lambda of 10\%, which combined with a desire to detect only changes of 50 units would result in $\beta = 0.5$
+
+```{r echo=FALSE, f, fig.width=7, fig.height=7}
+lambda <- seq(0.7,1.3,length=100000)
+gamma <- 2*(1-lambda+lambda*log(lambda))
+plot(lambda,gamma,type="l",xlab="lambda",ylab="gamma")
+```
+
+

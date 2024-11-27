@@ -1,0 +1,23 @@
+Package: ASBO
+Type: Package
+Title: Anomaly Detection by Options using the PELT Algorithm
+Version: 0.0.1.0
+Date: 2024-11-21
+Authors@R: c(person(given = "Paul",
+           	family = "Smith",
+           	role = c("aut", "cre"),
+           	email = "paul@waternumbers.co.uk",
+           	comment = c(ORCID = "0000-0002-0034-3412"))
+		)
+Description: THIS IS OUT OF DATE Implimentations of the univariate CAPA <doi:10.1002/sam.11586> and PELT <doi:10.1080/01621459.2012.737745> algotithms along with various cost functions for different distributions and models. The modular design, using R6 classes, favour ease of extension (for example user written cost functions) over the performance of other implimentations (e.g. <doi:10.32614/CRAN.package.changepoint>, <doi:10.32614/CRAN.package.anomaly>).
+License: GPL-3
+Encoding: UTF-8
+RoxygenNote: 7.3.1
+Suggests: tinytest, robustbase, knitr, markdown
+Imports: R6, Rcpp
+LinkingTo: Rcpp
+VignetteBuilder: knitr
+Depends: R (>= 4.0.0)
+Language: en-GB
+BugReports: https://github.com/waternumbers/ASBO/issues
+URL: https://github.com/waternumbers/ASBO

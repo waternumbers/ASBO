@@ -1,0 +1,153 @@
+---
+title: "Categorical Cost Calculations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Categorical Cost Calculations}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+                    collapse = TRUE,
+                    comment = "#>"
+                  )
+```
+
+The purpose of this vignette is to present the calculations of the costs for the categorical distribution over $N$ classes.
+
+Each time step $t$ belongs to group $k$ whose time stamps are the set $T_{k}$. A group has either an *a priori* known probability of being in each class $p = \left(p_{1},\ldots,p_{N}\right)$  or an unknown probability of being in each class $\lambda_{k} = \left(\lambda_{k,1},\ldots,\lambda_{k,N}\right)$ 
+
+### No Anomaly (Baseline)
+
+The data generating distribution gives for $t \in T_{k}$
+
+\[
+P\left(y_t \left| p \right.\right) = 
+\prod\limits_{i=1}^{N} p_{i}^{y_{t,i}}
+\]
+
+where $y_{t,i}=1$ if the $t$th sample is in the $i$th class and zero otherwise. For convience let there be $n_{k}$ samples in $T_{k}$ of which $n_{k,i}$ are of class $i$.
+
+The cost is computed as twice the negative log likelhiood and there is no penalty term giving
+
+\[
+C_{B}\left(y_{t \in T_{k}} \left| p \right.\right) = 
+-2 \sum\limits_{t \in T_{k}} 
+\sum\limits_{i=1}^{N}
+y_{t,i} \log\left( p_{i} \right)
+=-2 \sum\limits_{i=1}^{N} n_{k,i} \log\left( p_{i} \right)
+\]
+
+
+
+
+<!-- In this case $\lambda_{k}=1$ and there is no penalty so -->
+
+<!-- \[ -->
+<!-- C_{B}\left(y_{t \in T_{k}} \left| p_{t \in T_{k}}\right.\right) =  -->
+<!-- -2 \sum\limits_{t \in T_{k}}  -->
+<!-- \sum\limits_{i=1}^{N} -->
+<!-- y_{t,i} \left(  -->
+<!-- \log\left( p_{t,i} \right) -->
+<!-- -  -->
+<!-- \log\left( \sum\limits_{i=1}^{N}p_{t,i} \right) -->
+<!-- \right) -->
+<!-- \] -->
+
+### Anomaly
+
+In the case of the anomaly the cost is computed by
+
+\[
+C_{A}\left(y_{t \in T_{k}} \left| \lambda_{k} \right.\right) = 
+\beta - 2 \sum\limits_{t \in T_{k}} 
+\sum\limits_{i=1}^{N}
+y_{t,i} \log\left( \hat{\lambda}_{k,i} \right)
+= \beta - 2 \sum\limits_{i=1}^{N}
+n_{k,i} \log\left( \hat{\lambda}_{k,i} \right)
+\]
+
+where 
+
+\[
+\hat{\lambda}_{k,j} = \frac{ \sum\limits_{t \in T_{k}} y_{t,j} }
+{ \sum\limits_{i=1}^{N} \sum\limits_{t \in T_{k}} y_{t,i} }
+= \frac{n_{k,j}}{n_{k}}
+\]
+
+An anomalous region is created when
+
+\[
+C_{A}\left(y_{t \in T_{k}} \left| \lambda_{k} \right.\right) -
+C_{B}\left(y_{t \in T_{k}} \left| p \right.\right) = 
+\beta - 2 
+\sum\limits_{i=1}^{N}
+n_{k,i}
+\left( \log\left( n_{k,i} \right) - \log\left( n_{k} p_{i} \right) \right)
+<0
+\]
+
+
+In the case of a poitn anomaly $n_{k}=n_{k,j}=1$ giving
+
+\[
+C_{A}\left(y_{t \in T_{k}} \left| \lambda_{k} \right.\right) -
+C_{B}\left(y_{t \in T_{k}} \left| p \right.\right) = 
+\beta + 2 \log\left( p_{j} \right)
+\]
+
+
+<!-- ### Anomaly in Rate -->
+
+<!-- Rearrange the cost  -->
+
+<!-- \[ -->
+<!-- C\left(y_{t \in T_{k}} \left| \lambda_k,p_{t \in T_{k}}\right.\right) =  -->
+<!-- \beta -2  -->
+<!-- \sum\limits_{t \in T_{k}}  -->
+<!-- \sum\limits_{i=1}^{N} -->
+<!-- y_{t,i} -->
+<!-- \log\left( p_{t,i} \lambda_{k,i}\right) -->
+<!-- +2  -->
+<!-- \sum\limits_{t \in T_{k}}  -->
+<!-- \sum\limits_{i=1}^{N} -->
+<!-- y_{t,i} -->
+<!-- \log\left( \sum\limits_{i=1}^{N}p_{t,i} \lambda_{k,i}\right) -->
+<!-- \] -->
+
+<!-- Then since $\sum\limits_{i=1}^{N} y_{t,i} = 1$ -->
+
+<!-- \[ -->
+<!-- C\left(y_{t \in T_{k}} \left| \lambda_k,p_{t \in T_{k}}\right.\right) =  -->
+<!-- \beta -2  -->
+<!-- \sum\limits_{t \in T_{k}}  -->
+<!-- \sum\limits_{i=1}^{N} -->
+<!-- y_{t,i} -->
+<!-- \log\left( p_{t,i} \lambda_{k,i}\right) -->
+<!-- +2  -->
+<!-- \sum\limits_{t \in T_{k}}  -->
+<!-- \log\left( \sum\limits_{i=1}^{N}p_{t,i} \lambda_{k,i}\right) -->
+<!-- \] -->
+
+
+<!-- An estimate $\hat{\lambda}_{k}$ of $\lambda_{k}$ can be selected to minimise the cost by taking -->
+
+<!-- \[ -->
+<!-- \frac{\partial}{\partial \lambda_{k,j}} C\left(y_{t \in T_{k}} \left| \lambda_k,p_{t \in T_{k}}\right.\right) =  -->
+<!-- -2 \sum\limits_{t \in T_{k}} \frac{y_{t,j}p_{t,j}}{p_{t,j}\lambda_{k,j}} -->
+<!-- +2 \sum\limits_{t \in T_{k}} \frac{p_{t,j}}{ \sum\limits_{i=1}^{N} p_{t,i} \lambda_{k,i}} -->
+<!-- \] -->
+
+<!-- \[ -->
+<!-- \frac{1}{\lambda_{k,j}} -->
+<!-- \sum\limits_{t \in T_{k}} y_{t,j} = -->
+<!-- \sum\limits_{t \in T_{k}} \frac{p_{t,j}}{ \sum\limits_{i=1}^{N} p_{t,i} \lambda_{k,i}} -->
+<!-- \] -->
+
+
+
+
+
+
+

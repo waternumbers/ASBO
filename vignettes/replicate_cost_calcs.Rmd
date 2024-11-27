@@ -1,0 +1,93 @@
+---
+title: "Replicate Cost Calculations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Replicate Cost Calculations}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+                    collapse = TRUE,
+                    comment = "#>"
+                  )
+```
+
+The purpose of this vignette is to present the calculations of the costs for various univariate distributions where for each time step there are multiple independent observations.
+
+In the follow variables identified by Greek letters are considered known *a priori*.
+
+# Univariate Gaussian
+
+Data belongs to group $k$ whose time stamps are the set $T_{k}$ can have additive mean anomaly $m_{k}$ and multiplicative variance anomaly $s_{k}$ which are common for $t \in T_{k}$.
+For $t \in T_{k}$. At time step $t$ the vector of iid observations $\mathbf{y}_{t}=\left\{y_{t,1},\ldots,t_{t,n_{t}}\right\}$ is made. The probability of of $y_{t,i}$ is
+\[
+P\left(y_t \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = \frac{1}{\sqrt{2\pi\sigma_{t}s_{k}}}\exp\left(-\frac{1}{2\sigma_{t}s_{k}}\left(y_{t} - \mu_t - m_{k}\right)^2\right)
+\]
+
+with the likelihood of of the $n_{t}$ observations in $\mathbf{y}_{t}$ being
+\[
+L\left(\mathbf{y}_{t} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\left(2\pi s_{k}\right)^{-n_{t}/2} 
+\sigma_{t}^{-n_{t}/2}
+\exp\left(-\frac{1}{2s_{k}\sigma_{t}}\sum\limits_{i=1}^{n_{t}} \left(y_{t,i} - \mu_t - m_{k}\right)^{2}\right)
+\]
+or as a log likelihood
+\[
+l\left(\mathbf{y}_{t} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+-\frac{n_{t}}{2}\log\left(2\pi s_{k}\right) 
+-\frac{n_{t}}{2}\log\left(\sigma_{t}\right)
+-\frac{1}{2s_{k}\sigma_{t}}\sum\limits_{i=1}^{n_{t}} \left(y_{t,i} - \mu_t - m_{k}\right)^{2}
+\]
+
+
+The log-likelihood of $\mathbf{y}_{t \in T_{k}}$ is with $n_{k}=\sum\limits_{t\in T_{k}} n_{t}$
+\[
+l\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+-\frac{n_{k}}{2} \log\left(2\pi s_{k}\right)
+-\frac{1}{2}\sum\limits_{t \in T_{k}} n_{t}\log\left(\sigma_{t}\right)
+-\frac{1}{2s_{k}}\sum\limits_{t \in T_{k}} \frac{\sum_{i=1}^{n_{t}}\left(y_{t,i} - \mu_t - m_{k}\right)^2}{\sigma_{t}}
+\]
+
+with the cost being twice the negative log likelihood plus a penalty $\beta$ giving 
+
+\[
+C\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+n_{k} \log\left(2\pi s_{k}\right)
++\sum\limits_{t \in T_{k}} n_{t}\log\left(\sigma_{t}\right)
++\frac{1}{s_{k}}\sum\limits_{t \in T_{k}} \frac{\sum_{i=1}^{n_{t}}\left(y_{t,i} - \mu_t - m_{k}\right)^2}{\sigma_{t}}
++\beta
+\]
+
+## Anomaly in mean and varinace
+
+Estimates $\hat{m}$ of $m$ and $\hat{\sigma}$ of $\sigma$ can be selected to minimise the cost by taking
+\[
+\hat{m}_{k} = \left( \sum\limits_{t \in T_k} \frac{\sum\limits_{i=1}^{n_t} \left(y_t-\mu_t\right)}{\sigma_t} \right)\left(  \sum\limits_{t \in T_k} \frac{n_{t}}{\sigma_t}\right)^{-1}
+\]
+and
+\[
+\hat{s}_{k} = \frac{1}{n_{k}} \sum\limits_{t \in T_{k}} \frac{\sum_{i=1}^{n_{t}}\left(y_{t,i} - \mu_t - \hat{m}_{k}\right)^2}{\sigma_{t}}
+\]
+
+## Anomaly in Mean
+
+There is no change in variance so $s_{k}=1$. Estimate of $\hat{m}_{k}$ is unchanged from that for an anomaly in mean and variance.
+
+## Anomaly in Variance
+
+These is no mean anomaly so $m_{k}=0$. Estimate of $\hat{s}_{k}$ therfore changes to
+
+\[
+\hat{s}_{k} = \frac{1}{n_{k}} \sum\limits_{t \in T_{k}} \frac{\sum_{i=1}^{n_{t}}\left(y_{t,i} - \mu_t\right)^2}{\sigma_{t}}
+\]
+
+
+## No Anomaly (Baseline)
+
+Here $m_{k}=0$ and $s_{k}=1$ and there is no penalty so $\beta = 0$
+
+## Point anomaly
+
+Assuming at for all $t$ there are at least 2 unique values there is no need to represent a point in time differently [Check].

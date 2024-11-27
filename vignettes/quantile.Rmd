@@ -1,0 +1,82 @@
+---
+title: "Quantile Cost Calculations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quantile Cost Calculations}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+                    collapse = TRUE,
+                    comment = "#>"
+                  )
+```
+
+The purpose of this vignette is to present the calculations for a peicewise quantile regression where for each time step there are multiple independent observations.
+
+In the follow variables identified by Greek letters are considered unknown.
+
+# Quantile regression
+
+Data belongs to group $k$ whose time stamps are the set $t \in T_{k}$ which have common regression parameters $\theta_{k}$ and residual variance $\sigma_{k}$
+At time step $t$ the vector of iid observations $\mathbf{y}_{t}=\left\{y_{t,1},\ldots,t_{t,n_{t}}\right\}$ is explained by the design matrix $\mathbf{X}_{t}$.
+
+For a given quantile $\tau$ and using the check function $\rho\left(u,\tau\right) = u\left(\tau - I\left(u<0\right)\right)$ Koenker and Bassett (1978) show that an estimate of $\theta$ in QR model can be obtained by solving the convex optimization problem
+\[
+\min_{\theta} \left( \sum_{i=1}^{n_{t}} \rho\left(\mathbf{y}_{t,i}- \mathbf{X}_{t,i}\left(\mathbf{m}_{t}+\theta_{k}\right),\tau\right)
+\right)
+\]
+
+Solving this gives the maximum likelihood estimator of the asymmetric Laplace (AL) distributions (Geraci and
+Bottai, 2007 and Yu, Lu, and Stander, 2003) which has likelihood
+\[
+L\left(\mathbf{y}_{t} \left| \theta_k\right.\right) = \tau^{n_{t}}\left(1-\tau\right)^{n_{t}}\exp\left(-
+\sum_{t=1}^{n_{t}} \rho\left(\mathbf{y}_{t,i}- \mathbf{X}_{t,i}\left(\mathbf{m}_{t}+\theta_{k}\right),\tau\right)
+\right)
+\]
+
+With $\hat{\mathbf{y}}_{t} = \mathbf{y}_{t} - \mathbf{X}_{t} \mathbf{m}_{t}$ the log likelihood is given by
+\[
+l\left(\mathbf{y}_{t} \left| \theta_k,\sigma_k \right.\right) = 
+n_{j}\log \left(\tau \left(1-\tau\right)\right) - 
+\sum_{i=1}^{n_{t}} \rho\left(\hat{\mathbf{y}}_{t,i} - \mathbf{X}_{t,i}\theta_{k},\tau\right)
+\]
+
+
+The log-likelihood of $\mathbf{y}_{t \in T_{k}}$ is with $n_{k}=\sum\limits_{t\in T_{k}} n_{t}$
+\[
+l\left(\mathbf{y}_{t \in T_{k}} \left| \theta_k,\sigma_k,\mathbf{X}_{t}\right.\right) = 
+n_{k}\log\left(\tau \left(1-\tau\right)\right) - 
+\sum_{t \in T_{k}}\sum_{i=1}^{n_{t}} \rho\left(\hat{\mathbf{y}}_{t,i} - \mathbf{X}_{t,i}\theta_{k},\tau\right)
+\]
+
+with the cost being twice the negative log likelihood plus a penalty $\beta$ giving 
+
+\[
+C\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}}\sum_{i=1}^{n_{t}} \rho\left(\hat{\mathbf{y}}_{t,i} - \mathbf{X}_{t,i}\theta_{k},\tau\right)
+- 2n_{k}\log\left(\tau \left(1-\tau\right)\right) 
++ \beta
+\]
+
+## Baseline: No Anomaly
+
+Here $\theta_{k}=0$ and is no penalty so $\beta = 0$
+
+## Collective anomaly
+
+Estimate $\theta_{k}$ using ??? and then with penalty $\beta$
+\[
+C\left(\mathbf{y}_{t \in T_{k}} \left| \mu_t,m_k,\sigma_k,s_k\right.\right) = 
+\sum_{t \in T_{k}}\sum_{i=1}^{n_{t}} \rho\left(\hat{\mathbf{y}}_{t,i} - \mathbf{X}_{t,i}\hat{\theta}_{k},\tau\right)
+- 2n_{k}\log\left(\tau \left(1-\tau\right)\right) 
++ \beta
+\]
+
+## Point Anomaly
+
+if $n_t > 0$ then could proceed like a collective anomaly. Otherwise select $\hat{\theta}$ such that
+$\mathbf{y}}_{t,i} - \mathbf{X}_{t,i}\hat{\theta}_{k}= 0$
+

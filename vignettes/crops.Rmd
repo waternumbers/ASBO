@@ -1,0 +1,77 @@
+---
+title: "CROPS with anomalies"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{CROPS with anomalies}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+                    collapse = TRUE,
+                    comment = "#>"
+                  )
+```
+
+# Framework
+
+Let the observed data $\mathbf{y}_{1:T} = \left(y_{1},\ldots,y_{T}\right)$ which are indexed by time come from a parametric model with time parameter vectors $\theta_{t}$ whose density is given by $P\left(y_{t} \left| \theta_{t} \right.\right)$. The parameters in $\theta_{t}$ may be time varying or invariant. Anomalies are modelled as parametric epidemic changepoints, represented by changes in the parameters $\theta_{t}$ which are common across all timesteps in the anomaly.
+
+The $i$th anomalous period consists to $n_{i}$ consecuative time steps which are denoted by the set $T^\left[i\right]$. The $K$ anomalous periods are disjoint so $\bigcap\limits_{i=1}^{K} T^{\left[i\right]} = \emptyset$ and ordered such that $\max\limits_{t \in T^{\left[i\right]}} t < \min\limits_{t \in T^{\left[j\right]}} t$ for all $i<j$. the variations in the parameters caused by the anomalous periods is given by
+\[
+\theta_{t} = \left\{ \begin{array}{ll}
+\theta_{t}^{\left[1\right]} & t \in T^{\left[1\right]} \\
+& \vdots \\
+\theta_{t}^{\left[K\right]} & t \in T^{\left[K\right]} \\
+\theta_{t}^{\left[0\right]} & \mathrm{otherwise}
+\end{array}
+\right.
+\]
+The density and values of $\theta_{t}^{\left[0\right]}$ determine the non anomalous behaviour of the process generating the observed data. If these are considered known *a priori* then the anomalous periods can be  determined by the selection of $K, T^{\left[1\right]},\ldots,T^{\left[K\right]}$ to minimise the penalised cost
+
+\[
+\sum\limits_{t\notin\cup T^{\left[i\right]}} \mathcal{C}\left(y_{t},\theta_{t}^{\left[0\right]}\right)
++ \sum\limits_{i=1,\ldots,K}\left\{ \min_{\theta_{t}^{\left[i\right]}}\left( 
+\sum\limits_{t \in T^{\left[i\right]}} \mathcal{C}\left(y_{t},\theta_{t}^{\left[i\right]}\right) \right)
++ \beta \right\}
+\]
+
+subject to $n_{i} > l$. The minimum anomaly length $l$ is related to the anoamly cost function $\mathcal{C}\left(y_{t},\theta_{t}\right)$ and ensures that the minimum with respect to $\theta_{t}^{\left[i\right]}$ can be found.
+Concrete examples of this framework cost functions can be found in the cost function vignettes.
+
+One possible definition <ref> of $\mathcal{C}\left(y_{t},\theta_{t}\right)$ is as the negative log-likelihood of data given by the parametric model. In such cases a common choices for the penalty $\beta$ are based on informationc criteria commonly used for model selection <ref>. As noted in <> in practical settings may of these criteria perform poorly. Instead, in the follwoing section the CROPS algorithm, whch offers a graphical selection method for the selecton of the penalty term in changepoint analysis is adapted for use in this anomaly framework.
+
+## CROPS
+
+Folowing <ref crops paper> we relate the minimum value of the penalised cost function above which is given by
+\[
+Q\left(\mathbf{y}_{1:T},\beta\right) = \min\limits_{K, T^{\left[1\right]},\ldots,T^{\left[K\right]}} \left(\sum\limits_{t\notin\cup T^{\left[i\right]}} \mathcal{C}\left(y_{t},\theta_{t}^{\left[0\right]}\right)
++ \sum\limits_{i=1,\ldots,K}\left\{ \min_{\theta_{t}^{\left[i\right]}}\left( 
+\sum\limits_{t \in T^{\left[i\right]}} \mathcal{C}\left(y_{t},\theta_{t}^{\left[i\right]}\right) \right)
++ \beta \right\} \right)
+\]
+
+to the minimum cost of a partition with $K$ anomalies given by
+
+\[
+Q_{K}\left(\mathbf{y}_{1:T}\right) = \min\limits_{T^{\left[1\right]},\ldots,T^{\left[K\right]}} \left(\sum\limits_{t\notin\cup T^{\left[i\right]}} \mathcal{C}\left(y_{t},\theta_{t}^{\left[0\right]}\right)
++ \sum\limits_{i=1,\ldots,K}\left\{ \min_{\theta_{t}^{\left[i\right]}}\left( 
+\sum\limits_{t \in T^{\left[i\right]}} \mathcal{C}\left(y_{t},\theta_{t}^{\left[i\right]}\right) \right)
+\right\} \right)
+\]
+
+through
+\[
+Q\left(\mathbf{y}_{1:T},\beta\right) = \min\limits_{K} \left( Q_{K}\left(\mathbf{y}_{1:T}\right) + K\beta \right)
+\]
+
+
+This is exactly the form of the CROPS paper so theorom 3.1 and algorithm still apply
+
+# Point anomalies
+
+Select penalty based on number of standard deviations away from the mean then
+run CROPS for collective anomaly. *TODO* - document this is correct
+
+
